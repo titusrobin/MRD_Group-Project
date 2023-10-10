@@ -1,0 +1,265 @@
+---
+title: "Team Project Proposal: Group-13"
+format: html
+editor: visual
+echo : False
+---
+
+```{r}
+# Load the required Libraries
+suppressPackageStartupMessages(library(tidyverse))
+```
+
+# Team Member Details
+
+1.  Meixiang Du (md480): meixiang.du\@duke.edu
+2.  Revanth Chowdary Ganga (rg361): revanthchowdary.ganga\@duke.edu
+3.  Suim Park (sp699): suim.park\@duke.edu
+4.  Titus Robin Arun (tra29): robin.arun\@duke.edu
+
+# Introduction
+
+In total, we conducted a search across 18 datasets from various sources, covering topics ranging on marketing, tourism, airline industry, weather conditions, education systems and sports datasets. Based on criteria such as data clarity, volume, and data condition, we hereby represent the winners as:
+
+1.  Los Angeles Crime Data
+
+2.  WNBA Players Data
+
+3.  Iranian Churn Data
+
+# Dataset 1: Los Angeles Crime Data (2020 to Present)
+
+## Introduction
+
+Our top selection is a record of the incidents of crime in Los Angeles from `2020` to present day. This dataset was created by transcribing the records which are written on paper and is updated on a weekly basis.
+
+## Data Source
+
+The data originates from the crime records of the Los Angeles Police Department (LAPD). The data can be downloaded as a csv or other file formats from the following [Link](https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8).
+
+## Research Questions
+
+### 1. What Are the Factors That Influence the Outcome of an Investigation?
+
+We aim to convert 'Status' and 'Status Desc' columns in the crime dataset into binary values (solved and open cases) for outcome analysis. We'll explore potential relationships between variables such as time gap between crime occurrence and reporting, location of crime, demographic data of victim and the outcome variable.
+
+### 2. What Are the Indicating Factors That Influence the Number of Crimes Committed?
+
+We aim to identify leading indicators for crimes by aggregating the variables including but not limited to location, demographic data. Using these variables we'll determine crime counts (the outcome) and try to predict the crime rates or the likelihood of crime occurrence.
+
+## Data Description
+
+The Dataset is updated on a weekly basis and contains, at the time of downloading the latest dataset (20-Sep-2023) about \``0.8 million`\` records.
+
+the dataset contains the following columns:
+
+-   `DR_NO`: Division of Records Number
+
+-   `Date Rptd`: Date Crime was recorded in MM/DD/YYYY
+
+-   `DATE OCC`: Date Crime occured MM/DD/YYYY
+
+-   `TIME OCC`: Time of crime occurence in In 24 hour military time.
+
+-   `AREA`: Geographic Area code for the LAPD police disctrict
+
+-   `AREA NAME`: Name of the LAPD police district
+
+-   `Rpt Dist No`: A four-digit code that represents a sub-area within a Geographic
+
+-   `Part 1-2`: Indicates the part of the crime report
+
+-   `Crm Cd`: Indicates the crime committed. (Same as Crime Code 1)
+
+-   `Crm Cd Desc`: Defines the Crime Code provided.
+
+-   `Mocodes`: Modus Operandi: Activities associated with the suspect in commission of the crime
+
+-   `Vict Age`: Age of Vistim
+
+-   `Vict Sex`: Sex of Victim
+
+-   `Vict Descent`: Code to represent the descent of Victim
+
+-   `Premis cd`: The type of structure, vehicle, or location where the crime took place.
+
+-   `Weapon Used Cd`: The type of weapon used in the crime.
+
+-   `Weapon Desc`: Defines the Weapon Used Code provided.
+
+-   `Status`: Status of the case. (IC is the default)
+
+-   `Status Desc`: Defines the Status Code provided.
+
+-   `Crm Cd 1`: Indicates the crime committed.
+
+-   `Crm Cd 2`: May contain a code for an additional crime
+
+-   `Crm Cd 3`: May contain a code for an additional crime
+
+-   `Crm Cd 4`: May contain a code for an additional crime
+
+-   `LOCATION`: Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
+
+-   `Cross Street`: Cross Street of rounded Address
+
+-   `LAT`: Latitude
+
+-   `LON`: Longitude
+
+Please find below the \``glimpse`\` of the Dataset after it has been loaded into R
+
+```{r}
+#Loading Data from CSV
+df_1 <- read.csv('/Users/revanth/Documents/MIDS/Semester 1/MRD/Group Project/Datasets/crime.csv')
+```
+
+```{r}
+glimpse(df_1)
+```
+
+# Dataset 2: WNBA Players Dataset
+
+## Introduction
+
+This dataset includes season-level advanced statistics for WNBA players, organized by team, spanning the 1997-2019 seasons. d it also includes a Composite Rating obtained from a third-party source.
+
+## Data Source
+
+The dataset originates from [Basketball-Reference.com](http://basketball-reference.com/), for this project the dataset was downloaded from the following [Link](https://github.com/fivethirtyeight/WNBA-stats/blob/master/wnba-player-stats.csv)
+
+## Research Questions
+
+### 1. What is the primary indicator of a player's probability of winning and their total share of winnings?
+
+We aim to identify the key factors influencing a player's total win shares (outcome variable) by examining variables such as the player's age, team, their position within the team, and their efficiency level in each respective position.
+
+### 2. What distinguishes athletes who achieve long-term success in their careers from their peers?
+
+We aim to enhance our understanding of the leading indicators that set apart athletes who enjoy enduring success in their careers from their peers investigation by encompassing factors such as player age, team affiliation, playing position within the team, efficiency levels in each position, as well as any changes in position and efficiency over different career stages.
+
+## Data Description
+
+The Dataset contains `3883` records and following columns:
+
+-   `Player`: Player name
+
+-   `year_ID`: Season
+
+-   `Age`: Age (as of Jul. 1)
+
+-   `Tm`: Team played for
+
+-   `tm_gms`: Team's scheduled games
+
+-   `Pos`: Player's position played
+
+-   `G`: Games played
+
+-   `MP`: Minutes played
+
+-   `MP_pct`: Percentage of available minutes played
+
+-   `PER`: Player Efficiency Rating
+
+-   `Status`: Binary (1: Active, 2: Non-active)
+
+-   `TS_pct`: True Shooting Percentage
+
+-   `ThrPAr`: Three-point Attempt Rate (3PA/FGA)
+
+-   `FTr`: Free Throw Rate (FTA/FGA)
+
+-   `ORB_pc`: Offensive rebound percentage
+
+-   `TRB_pct`: Total rebound percentage
+
+-   \`AST_pct\`: Assist percentage
+
+-   `STL_pct`: Steal percentage
+
+-   `BLK_pct`: Block percentage
+
+-   `TOV_pct`: Turnover percentage
+
+-   `USG_pct`: Usage percentage
+
+-   `OWS`: Offensive Win Shares
+
+-   `DWS`: Defensive Win Shares
+
+-   `WS`: Total Win Shares
+
+-   `WS40`: Win Shares per 40 minutes
+
+-   `Composite_Rating`: Estimated net points added per 100 possessions
+
+-   `Wins_Generated`: Wins implied by Composite Rating
+
+please find below the \``glimpse`\` of the Dataset after it has been loaded into R
+
+```{r}
+df_2 <- read.csv('/Users/revanth/Documents/MIDS/Semester 1/MRD/Group Project/Datasets/wnba.csv')
+glimpse(df_2)
+```
+
+# Dataset 3: Iranian Churn Dataset
+
+## Introduction
+
+The third dataset we want to use is a record of customers' churn resulted from the Iranian telecom company. All of the attributes except for churn are the aggregated data of the first 9 months.
+
+## Data Source
+
+This dataset is randomly collected from an Iranian telecom company's database over a period of 12 months.
+
+The dataset has been downloaded from the following [Link](https://archive.ics.uci.edu/dataset/563/iranian+churn+dataset)
+
+## Research Questions
+
+### 1. What are the indicators that impact the churn?
+
+We aim to identify leading indicators for churns. By aggregating data at the variable of information from telecom company, we'll determine churns (the outcome). Since many variables can potentially influence churn, we will investigate which variables have the greatest impact on churn.
+
+### 2. What are the factors that impact how long a customer stays with the carrier?
+
+we plan to calculate the duration of customer engagement as a field of interest, and explore customer complaint behavior and purchasing behavior to identify the key indicators for identifying loyal customers.
+
+## Data Description
+
+The Dataset contains `3150` records and following columns.
+
+-   `Call Failures`: Number of call failures
+
+-   `Complains`: Binary (0: No complaint, 1: Complaint)
+
+-   `Subscription Length`: Total months of subscription
+
+-   `Charge Amount`: Ordinal attribute (0: lowest amount, 9: highest amount)
+
+-   `Seconds of Use`: Total seconds of calls
+
+-   `Frequency of use`: Total number of calls
+
+-   `Frequency of SMS`: Total number of text messages
+
+-   `Distinct Called Numbers`: Total number of distinct phone calls
+
+-   `Age Group`: Ordinal attribute (1: younger age, 5: older age)
+
+-   `Tariff Plan`: Binary (1: Pay as you go, 2: Contractual)
+
+-   `Status`: Binary (1: Active, 2: Non-active)
+
+-   `Age`: Age of the customers
+
+-   `Customer Value`: The calculated value of customers
+
+-   `Churn`: Binary (1: churn, 0: non-churn) - Class label
+
+please find below the \``glimpse`\` of the Dataset after it has been loaded into R
+
+```{r}
+df_3 <- read.csv('/Users/revanth/Documents/MIDS/Semester 1/MRD/Group Project/Datasets/churn.csv')
+glimpse(df_3)
+```
