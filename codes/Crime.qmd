@@ -1,0 +1,264 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+data <- read.csv('/Users/robintitus/Desktop/stats/Crime_Data_from_2020_to_Present (1).csv')
+```
+
+```{r}
+# Overview of the data types
+str(data)
+## 79K overservations and 28 variables 
+view(data)
+```
+
+```{r}
+##Checking for null values 
+colSums(is.na(data))
+#Not too many null values
+```
+
+```{r}
+library(dplyr)
+
+# Filter the dataset to only include the rows where the Premis.Cd variable is null
+null_premise_rows <- data %>% filter(is.na(Premis.Cd))
+
+# Save the filtered rows to a new CSV file
+view(null_premise_rows)
+#
+```
+
+```{r}
+library(ggplot2)
+
+# Create a bar chart of the "Part.1.2" column
+ggplot(data, aes(x = factor(Part.1.2))) +
+  geom_bar() +
+  labs(title = "Distribution of Part.1.2 Column",
+       x = "Categories",
+       y = "Count")
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Create a data frame for visualization
+crime_data <- data.frame(
+  Part.1.2 = factor(data$Part.1.2, labels = c("Part 1", "Part 2")),
+  Crm.Cd = as.factor(data$Crm.Cd)
+)
+
+# Create a bar chart
+ggplot(crime_data, aes(x = Part.1.2, fill = Crm.Cd)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution of Crm Cd by Part 1-2", x = "Part 1-2", y = "Count") +
+  scale_fill_discrete(name = "Crm Cd") +
+  theme_minimal()
+```
+
+```{r}
+# Load the necessary library
+# Part 1 crimes are the most serious crimes and are tracked by the Federal Bureau of Investigation (FBI). Part 2 crimes are less serious crimes and are tracked by individual law enforcement agencies.
+library(ggplot2)
+
+# Create a data frame for visualization
+crime_data <- data.frame(
+  Part.1.2 = factor(data$Part.1.2, labels = c("Part 1", "Part 2"))
+)
+
+# Create a bar chart for counts of Part 1 and Part 2
+ggplot(crime_data, aes(x = Part.1.2)) +
+  geom_bar() +
+  labs(title = "Distribution of Part 1-2", x = "Part 1-2", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+#Why zero's for Victim Age 
+# Load the necessary library
+library(ggplot2)
+
+# Create a histogram for Victim Age with counts displayed on the bars
+ggplot(data, aes(x = Vict.Age)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+  geom_text(stat = "bin", aes(label = after_stat(count), vjust = -0.5), size = 3) +
+  labs(title = "Distribution of Victim Age", x = "Age", y = "Count") +
+  theme_minimal()
+
+# Count the number of zeros (missing values) in the Vict.Age column
+zero_count <- sum(data$Vict.Age == 0, na.rm = TRUE)
+
+# Print the count
+cat("Number of zeros (missing values) in Victim Age:", zero_count, "\n")
+x <- 196113/798242
+print(x)
+
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Create a bar chart for Victim Sex with counts displayed on the bars
+ggplot(data, aes(x = Vict.Sex)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = stat(count)),
+            vjust = -0.5, size = 4) +  # Display counts on top of the bars
+  labs(title = "Distribution of Victim Sex", x = "Sex", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Create a bar chart for Victim Descent with counts displayed on the bars
+ggplot(data, aes(x = Vict.Descent)) +
+  geom_bar(fill = "lightgreen", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 3) +
+  labs(title = "Distribution of Victim Descent", x = "Descent", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Generate a frequency table for Premis.Cd
+premis_cd_table <- table(data$Premis.Cd)
+
+# Convert the table to a data frame for visualization
+premis_cd_df <- as.data.frame(premis_cd_table)
+names(premis_cd_df) <- c("Premis.Cd", "Count")
+
+# Sort the data frame by count in descending order
+premis_cd_df <- premis_cd_df[order(premis_cd_df$Count, decreasing = TRUE), ]
+
+# Create a bar chart for all Premis.Cd categories
+ggplot(premis_cd_df, aes(x = factor(Premis.Cd, levels = premis_cd_df$Premis.Cd), y = Count)) +
+  geom_bar(stat = "identity", fill = "lightblue", color = "black") +
+  labs(title = "Premis.Cd Categories", x = "Premis.Cd", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Generate a frequency table for Premis.Cd
+premis_cd_table <- table(data$Premis.Cd)
+
+# Convert the table to a data frame for visualization
+premis_cd_df <- as.data.frame(premis_cd_table)
+names(premis_cd_df) <- c("Premis.Cd", "Count")
+
+# Sort the data frame by count in descending order
+premis_cd_df <- premis_cd_df[order(premis_cd_df$Count, decreasing = TRUE), ]
+
+# Select the top 25 Premis.Cd categories
+top_25_premis_cd <- premis_cd_df[1:25, ]
+
+# Create a bar chart for the top 25 Premis.Cd categories
+ggplot(top_25_premis_cd, aes(x = factor(Premis.Cd, levels = top_25_premis_cd$Premis.Cd), y = Count)) +
+  geom_bar(stat = "identity", fill = "lightblue", color = "black") +
+  labs(title = "Top 25 Premis.Cd Categories", x = "Premis.Cd", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Filter out the top 15 Premis.Cd categories (you can change the number if needed)
+top_premis <- names(sort(table(data$Premis.Cd), decreasing = TRUE))[1:15]
+
+# Filter the data for the top Premis.Cd categories
+filtered_data <- data[data$Premis.Cd %in% top_premis, ]
+
+# Create a frequency table for Vict.Descent and Premis.Cd
+frequency_table <- table(filtered_data$Vict.Descent, filtered_data$Premis.Cd)
+
+# Convert the frequency table to a data frame
+frequency_df <- as.data.frame(frequency_table)
+colnames(frequency_df) <- c("Vict.Descent", "Premis.Cd", "Count")
+
+# Create a stacked bar chart
+ggplot(frequency_df, aes(x = Vict.Descent, y = Count, fill = Premis.Cd)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 15 Premis.Cd Categories by Vict.Descent",
+       x = "Vict.Descent", y = "Count") +
+  scale_fill_brewer(palette = "Set3") +  # You can change the palette as needed
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Create a frequency table for Weapon.Used.Cd
+weapon_counts <- table(data$Weapon.Used.Cd)
+
+# Convert the frequency table to a data frame
+weapon_df <- as.data.frame(weapon_counts)
+colnames(weapon_df) <- c("Weapon.Used.Cd", "Count")
+
+# Sort the data by count in descending order
+weapon_df <- weapon_df[order(weapon_df$Count, decreasing = TRUE), ]
+
+# Select the top 25 categories
+top_25_weapon_df <- head(weapon_df, 25)
+
+# Create a bar chart
+ggplot(top_25_weapon_df, aes(x = reorder(Weapon.Used.Cd, -Count), y = Count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 25 Weapon.Used.Cd Categories",
+       x = "Weapon.Used.Cd", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Filter out the top 15 Weapon.Used.Cd categories
+top_weapon_used <- names(sort(table(data$Weapon.Used.Cd), decreasing = TRUE))[1:15]
+
+# Filter the data for the top Weapon.Used.Cd categories
+filtered_data <- data[data$Weapon.Used.Cd %in% top_weapon_used, ]
+
+# Create a frequency table for Vict.Descent and Weapon.Used.Cd
+frequency_table <- table(filtered_data$Vict.Descent, filtered_data$Weapon.Used.Cd)
+
+# Convert the frequency table to a data frame
+frequency_df <- as.data.frame(frequency_table)
+colnames(frequency_df) <- c("Vict.Descent", "Weapon.Used.Cd", "Count")
+
+# Create a stacked bar chart
+ggplot(frequency_df, aes(x = Vict.Descent, y = Count, fill = Weapon.Used.Cd)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 15 Weapon.Used.Cd by Vict.Descent",
+       x = "Vict.Descent", y = "Count") +
+  scale_fill_brewer(palette = "Set3") +  # You can change the palette as needed
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+
+# Create a count plot for Status
+ggplot(data, aes(x = Status)) +
+  geom_bar(fill = "blue", color = "black") +
+  labs(title = "Distribution of Status", x = "Status", y = "Count") +
+  theme_minimal()
+```
