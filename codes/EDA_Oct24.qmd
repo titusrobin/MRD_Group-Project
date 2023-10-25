@@ -1,0 +1,313 @@
+---
+title: "Los Angeles Crime Data: EDA"
+author: "Group 13: Titus(tra29), Revanth(rg361), Suim(sp699), Meixiang(md480)"
+format: pdf
+editor: visual
+output: FALSE
+echo: FALSE
+warning: FALSE
+---
+
+```{r, message=FALSE, warning=FALSE}
+#Installing required Packages
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(geosphere)
+library(corrplot)
+library(lubridate)
+```
+
+```{r}
+df <- read.csv('/Users/robintitus/Desktop/Crime_Data_from_2020_to_Present_20231024.csv')
+```
+
+```{r}
+str(df)
+```
+
+```{r}
+#Load Precinct Data
+df_precinct <- read_csv('/Users/robintitus/Desktop/Precinct_Location 2.csv', show_col_types = FALSE)
+```
+
+```{r}
+#Clean the Data Columns and create difference
+df$DATE.OCC <- substr(df$DATE.OCC,1,10) 
+df$DATE.OCC <- as.Date(df$DATE.OCC, "%m/%d/%Y")
+
+df$Date.Rptd <- substr(df$Date.Rptd,1,10) 
+df$Date.Rptd <- as.Date(df$Date.Rptd, "%m/%d/%Y")
+
+df$rpt_diff <- df$Date.Rptd- df$DATE.OCC
+```
+
+```{r}
+#Calculate Year, Month and Day
+df$dt_year = format(df$DATE.OCC,"%Y")
+df$dt_month = format(df$DATE.OCC,"%m")
+df$dt_day = format(df$DATE.OCC,"%d")
+df$dt_weekday <- wday(df$DATE.OCC, label=TRUE)
+```
+
+```{r}
+#Calculate Distance to Precinct in Miles
+df <- df %>% left_join( df_precinct[,c("precinct_code","precinct_lat","precinct_long")], 
+        by=c('AREA'='precinct_code'))
+
+df$dist_to_precinct <- distHaversine(df[,c("LON","LAT")],df[,c("precinct_long","precinct_lat")])*0.00062137
+```
+
+```{r}
+#create text column for crime_type
+df$crime_type <- as.factor(ifelse(df$Part.1.2==1,"serious","non-serious"))
+```
+
+```{r}
+#clean time 
+df$time_hr <- as.integer(substr(str_pad(as.character(df$TIME.OCC),4,pad=0),1,2))
+```
+
+# 1. Introduction
+
+### 1.1. Data Overview
+
+The data used originates from the crime records of the Los Angeles Police Department(LAPD) from 2020 up to present day. The data is created by transcribing original crime reports that are typed on paper and is updated on a `weekly` basis.
+
+The [Dataset](https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8) contains **820,599** **observations**, encompassing **28** **variables** as of the latest update on **18-Oct-2023**.
+
+Each row of the Dataset represents a crime reported in Los Angeles, and contains the following categories of information(with selected examples):
+
+1.  `Location`: Latitude, Longitude, Area, Street, District
+2.  `Victim Demographic`: Age, Gender, Ethnicity
+3.  `Crime Description`: Type of Crime, Investigation Outcomes, Weapon Usage
+4.  `Date and Time`: Date Reported, Date Occurred, Time Occurred
+5.  `Identifier/Classifier`: Crime Record Identifier, Mocodes
+
+### 1.2. Research Questions
+
+We aim to answer the following two questions using the data:
+
+1.  What are the strongest indicating factors that influence the seriousness of crime committed(categorical outcome).
+
+2.  What are the factors which influence the number of crimes committed(continuous outcome).
+
+# 2. Outcome Variables
+
+1.  A new variable `crime_type` is derived from the 'Part 1-2' column in the original dataset which classifies crime committed into two categories; `serious` for crimes such as felony offenses like criminal homicide, forcible rape, etc; and `non-serious` for less severe crimes.
+
+    The bar plot below represents the count of the seriousness of crime by category in the dataset, about **60%** of the crimes committed are serious crimes.
+
+```{r, output = TRUE}
+#| fig-width: 5
+#| fig-height: 2
+ggplot(df, aes(x = crime_type, fill = crime_type)) +
+  geom_bar() +
+  labs(title = "Distribution of Crime Types", x = "Crime Types", y = "Count") +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.5) +   # Adjusted the vertical position of the text
+  scale_fill_manual(values = c("non-serious" = "#88DD88", "serious" = "#FF6666")) +  # Dimmed shades of green and red
+  theme(legend.position = "none",      # Remove the legend
+        plot.title = element_text(hjust = 0.5))  # Center the title
+```
+
+2.  The second outcome variable is the count of crimes reported on daily basis derived by grouping the original dataset by the 'Date Occurred' column.
+
+    The time series plot below displays the number of crimes for each day in the dataset along with the average number of crimes per day. There is a slight uptrend in the number of crimes per day over time with a few days having very high number of crimes. There is a drastic drop at the end as the lastest crimes may not have been reported/updated yet.
+
+```{r, output=TRUE}
+#| fig-width: 5
+#| fig-height: 2
+daily_crime_count <- df %>%
+  group_by(DATE.OCC) %>%
+  summarize(Count = n()) %>%
+  arrange(DATE.OCC)
+
+# Calculate the average value
+avg_value <- mean(daily_crime_count$Count)
+
+ggplot(data = daily_crime_count, aes(x = DATE.OCC, y = Count)) +
+  geom_line(color = "#4A90E2") +  
+  labs(title = "Daily Crime Counts", x = "Date The Crime Occurred", y = "Count") +
+  geom_hline(yintercept = avg_value, linetype = "dashed", color = "red") +
+  geom_text(aes(x = max(DATE.OCC), y = avg_value + max(Count) * 0.02, 
+                label = paste("Average:", round(avg_value, 0))), 
+            color = "red", hjust = 0.78) +
+  theme(legend.position = "none",      
+        plot.title = element_text(hjust = 0.5),   
+        axis.title.x = element_text(size=12), 
+        axis.title.y = element_text(size=12))
+```
+
+# 3. Primary Relationships of Interest
+
+#### 3.1. Time and Date Variable 
+
+There is a minor variation in the proportion and count of crimes when compared on a monthly and weekday level. The variation is more prominent at the 'Time of Day' level.
+
+```{r, output=TRUE}
+#Time, Day and Month
+q1 <- ggplot(df, aes(x=time_hr, fill=crime_type))+
+  geom_histogram(binwidth = 1, position="dodge", alpha=0.7)+
+  labs(title = NULL, x = "Time of Day (24-Hour)", y = "Count") +
+  scale_fill_discrete(name="Crime Type")  # Set legend title
+
+q2 <- ggplot(df, aes(x=dt_weekday, fill=crime_type))+
+  geom_bar(position="dodge")+
+  labs(title = NULL, x = "Weekday", y = "Count") +
+  theme(legend.position="none")
+
+q3 <- filter(df, dt_year != 2023) %>%
+  ggplot(aes(x=dt_month, fill=crime_type))+
+  geom_bar(position="dodge")+
+  labs(title = NULL, x = "Month", y = 'Count')+
+  theme(legend.position="none")
+```
+
+```{r, output=TRUE}
+#| fig-height: 2.5
+library(gridExtra)
+library(ggplot2)
+
+# Adjust the plot margins
+margin_adjustment <- theme(plot.margin = margin(5, 5, 5, 5, "pt"))
+q1 <- q1 + margin_adjustment
+q2 <- q2 + margin_adjustment
+q3 <- q3 + margin_adjustment
+
+# Define a layout matrix
+# The numbers in the matrix correspond to the plots:
+# 1 = q3, 2 = q2, 3 = q1
+# The layout matrix arranges q3 and q2 side by side in the first row,
+# and q1 (stretched) in the second row.
+layout_matrix <- rbind(c(1, 2),
+                      c(3, 3)) # Stretching q1 across the width of the grid
+
+# Combine the plots using the custom layout
+grid.arrange(q3, q2, q1, layout_matrix = layout_matrix, 
+             top="Crime Distribution by Month, Weekday, and Time of Day")
+```
+
+#### 3.2 Variation with Location
+
+There is a minor variation in the proportion and count of crimes at different precincts.
+
+```{r, output=TRUE}
+#| fig-height: 3.3
+library(gridExtra)
+
+# First plot
+p1 <- ggplot(df, aes(x = AREA.NAME, fill = crime_type)) +
+  geom_bar(position = "dodge", alpha = 0.7) +
+  labs(x = "Precinct", y = "Count", fill = "Crime Type") +  # Removed title to avoid duplication
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))  # Rotate x-axis labels
+
+# Second plot
+p2 <- df %>% filter(dist_to_precinct < 10) %>%
+  ggplot(aes(x = dist_to_precinct, fill = crime_type)) +
+  geom_histogram(binwidth = 1, position = "dodge", alpha = 0.7) +
+  labs(x = "Distance (in miles)", y = "Count", fill = "Crime Type")  # Removed title to avoid duplication
+
+# Combine the two plots with a single title
+grid.arrange(p1, p2, ncol = 1, top = "Crime Count and Distance to Precinct")
+```
+
+#### 3.3 Victim Demographics 
+
+The victim demographic data - 'Age', 'Sex' and 'Descent' have a large number of missing values(systematic). There is a clear observable variation of the number and proportion of the type of crimes with respect to these variables. (Refer to Appendix)
+
+```{r, output=TRUE}
+# Assign plots to variables
+p1 <- ggplot(df, aes(x = Vict.Age, fill = as.factor(crime_type))) +
+  geom_histogram(binwidth = 10, position = "dodge", color = "black") +
+  labs(title = NULL, 
+       x = "Age", 
+       y = "Count", 
+       fill = "Crime Type") +
+  theme(legend.position="none")
+
+p2 <- ggplot(df, aes(x = Vict.Sex, fill = as.factor(crime_type))) +
+  geom_bar(position = "dodge", color = "black") +
+  labs(title = NULL, 
+       x = "Sex", 
+       y = "Count") +  # Removed the fill legend title
+  theme_minimal() +
+  theme(legend.position="none")  # Remove the legend
+
+p3 <- ggplot(df, aes(x = Vict.Descent, fill = as.factor(crime_type))) +
+  geom_bar(position = "dodge", color = "black") +
+  labs(title = NULL, 
+       x = "Descent", 
+       y = "Count", 
+       fill = "Crime Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+
+# Adjust the plot margins
+margin_adjustment <- theme(plot.margin = margin(5, 5, 5, 5, "pt"))
+p1 <- p1 + margin_adjustment
+p2 <- p2 + margin_adjustment
+p3 <- p3 + margin_adjustment
+
+# Define a layout matrix similar to the previous one, but for the new plots
+# 1 = p1, 2 = p2, 3 = p3
+# The layout matrix arranges p1 and p2 side by side in the first row,
+# and p3 (stretched) in the second row.
+layout_matrix_new <- rbind(c(1, 2),
+                           c(3, 3)) # Stretching p3 across the width of the grid
+
+# Use grid.arrange to display the plots with the custom layout
+grid.arrange(p1, p2, p3, layout_matrix = layout_matrix_new, 
+             top="Distribution by Victim Age, Sex, and Descent")
+```
+
+\*Victim Sex: F - Female, M - Male, X - Unknown; Victim Descent Code: A - Other Asian, B - Black, H - Hispanic/Latin/Mexican, W - White, X - Unknown, O - Other.
+
+#### 3.4. Weapons Usage  
+
+Against common intuition the proportion of serious crimes is lesser when a weapon is involved.
+
+```{r, output=TRUE}
+#| fig-width: 5
+#| fig-height: 1.5
+# Create a new column named "weapons_binary" based on the Weapon.Used.Cd column
+df$weapons_binary <- ifelse(is.na(df$Weapon.Used.Cd) | (df$Weapon.Used.Cd==""),0,1)
+
+# Create a bar chart for weapons_binary with counts displayed on the bars, based on the crime_type categories
+ggplot(df, aes(x = as.factor(weapons_binary), fill=crime_type)) +
+  geom_bar(position = "dodge", color = "black") +
+  geom_text(stat = "count", position = position_dodge(0.9), 
+            aes(label = stat(count), group = crime_type), vjust = 1.5, size = 3) +
+  labs(title = "Weapons Usage", 
+       x = "Weapons Used (0 = No Weapon, 1 = Weapon Present)", 
+       y = "Count",
+       fill = "Crime Category") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Centering the title
+```
+
+## 4. Other Characteristics
+
+Some of the variables in the Dataset were excluded from the analysis due to the following reasons(with selected examples):
+
+1.  `Absence of a connection`: Certain ID-related variables such as crime record identifier.
+
+2.  `Duplicated Information`: Columns which contained duplicated or redundant information as Crime Code 1.
+
+3.  `Missing Values`: Columns which had a high number of NAs which couldn't be imputed e.g. Crime Code 2, 3, 4.
+
+4.  `Out of Scope`: Variables which are not inline with the research interest such as Mocodes and detailed crime description.
+
+## 5. Potential challenges
+
+The following are the potential challenges we may face during the modelling phase:
+
+1.  `Missingness`: The absence of data, particularly in victim demographic variables such as "age," "sex," and "decent," can introduce bias and significantly impact the model's performance. Depending on the extent of missingness, it might be necessary to employ suitable strategies such as imputation techniques or cautious exclusion of incomplete cases to ensure the integrity and accuracy of the analysis.
+
+2.  `Data`: While we have sufficient size of Data (\~800k Records) to use for the analysis, the dynamic nature of the Data (updated weekly) might posses a challenge as we may see new discrepancies which were not present in earlier during EDA. TO overcome this, we plan to use the same Dataset we used for the EDA phase and not update it to the latest one at the time of modelling.
+
+3.  `Categorical Variable Handling`: Certain categorical variables, such as crime description comprise a substantial number of levels, potentially complicating the modeling process. Certain categorical variables, including "Area," comprise a substantial number of levels, potentially complicating the modeling process.
+
+4.  `Outlier`: Some variables such as the distance to precinct have outlines which need to be investigated and handled accordingly.
+
+## 
